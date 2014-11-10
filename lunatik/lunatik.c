@@ -3,6 +3,26 @@
  * See Copyright Notice in lunatik.h
  */
 
+#include <linux/module.h>
+#include <linux/types.h>
+#include <linux/fs.h>
+#include <linux/errno.h>
+#include <linux/mm.h>
+#include <linux/sched.h>
+#include <linux/init.h>
+#include <linux/cdev.h>
+#include <asm/io.h>
+#include <asm/system.h>
+#include <asm/uaccess.h>
+#include <linux/timer.h>
+#include <linux/gpio.h>
+#include <linux/slab.h>
+#include <linux/platform_device.h>
+#include <mach/sys_config.h>
+#include <mach/clock.h>
+#include <mach/gpio.h>
+#include <mach/system.h>
+
 #include "lua/lua.h"
 #include "lua/lauxlib.h"
 #include "lkworkqueue.h"
@@ -19,6 +39,10 @@
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/time.h>
+
+
+
+
 
 /* static data */
 
@@ -143,6 +167,56 @@ inline static void openlib(lua_State * L, lua_CFunction luaopen_func)
 	lua_pcall(L, 0, 1, 0);
 } /* end openlib */
 
+static char g_result[512];
+static ssize_t lunak_result(struct class *class, struct class_attribute *attr, char *buf)
+{
+        strncpy(buf,g_result,sizeof(g_result));
+        return strlen(g_result);
+}
+
+static ssize_t lunak_eval(struct class *class, struct class_attribute *attr,
+                        const char *buf, size_t size)
+{
+    char *result;
+    size_t sz_result;
+	lunatik_loadcode(buf, size, &result, &sz_result);
+	if(result != NULL) {
+	    printk(KERN_ERR"lunatik_loadcode:result is %s",result);
+    	strncpy(g_result,result,sizeof(g_result));
+    	kfree(result);
+	} else {
+	    memset(g_result,0,sizeof(g_result));
+	}
+    return size;
+}
+
+static struct class_attribute lunak_class_attrs[] = {
+        __ATTR(eval, 0664, lunak_result, lunak_eval),
+        __ATTR_NULL,
+};
+
+static struct class lunak_class = {
+    .name = "lunak",
+    .owner = THIS_MODULE,
+    .class_attrs = lunak_class_attrs,
+};
+
+static int __init lunak_sysfs_init(void)
+{
+    int status;
+
+    memset(g_result,0,sizeof(g_result));
+    
+    status = class_register(&lunak_class);
+    if (status < 0)
+        pr_err("%s: status %d\n", __func__, status);
+    else
+        pr_info("%s success\n", __func__);
+
+    return status;
+}
+
+
 static int __init lunatik_init(void)
 {
 	struct luaL_Reg lib_crypto[] = {
@@ -155,9 +229,13 @@ static int __init lunatik_init(void)
 		{ NULL, NULL }
 	};
 
+	printk("Lunatik init begin\n");
+
 	L = lua_open();
-	if (L == NULL)
+	if (L == NULL) {
+    	printk(KERN_ERR"Lunatik out off memory\n");	    
 		return -ENOMEM;
+	}
 
 	lunatikW_init(L);
 
@@ -169,13 +247,23 @@ static int __init lunatik_init(void)
 	luaL_register(L, "crypto", lib_crypto);
 	luaL_register(L, "buffer", lib_buffer);
 
-	printk("Lunatik init done\n");
+
+    lunak_sysfs_init();
+
+	printk(KERN_ERR"Lunatik init done\n");
 	return 0;
 } /* end lunatik_init */
 
-MODULE_AUTHOR("Lourival Vieira Neto <lneto@inf.puc-rio.br>");
+void lunatik_exit(void)
+{
+	printk(KERN_ERR"Lunatik init done\n");
+}
 
+MODULE_AUTHOR("Lourival Vieira Neto <lneto@inf.puc-rio.br>");
+MODULE_LICENSE("Dual BSD/GPL");
 module_init(lunatik_init);
+module_exit(lunatik_exit);
+
 
 /* end lunatik.c */
 

@@ -31,6 +31,7 @@
 #include "bindings/misc.h"
 #include "bindings/crypto.h"
 #include "bindings/buffer.h"
+#include "bindings/gpio.h"
 
 #include <linux/kernel.h>
 #include <linux/slab.h>
@@ -247,6 +248,7 @@ static int __init lunatik_init(void)
 	luaL_register(L, "crypto", lib_crypto);
 	luaL_register(L, "buffer", lib_buffer);
 
+    luak_gpio_register(L);
 
     lunak_sysfs_init();
 
@@ -256,7 +258,8 @@ static int __init lunatik_init(void)
 
 void lunatik_exit(void)
 {
-	printk(KERN_ERR"Lunatik init done\n");
+    class_unregister(&lunak_class);
+	printk(KERN_ERR"Lunatik exit done\n");
 }
 
 MODULE_AUTHOR("Lourival Vieira Neto <lneto@inf.puc-rio.br>");

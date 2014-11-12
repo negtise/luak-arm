@@ -8,9 +8,9 @@ lunatik_printk(lua_State *L) {
 	for (i = n; i >= 1; i--) {
 		const char *s = lua_tostring(L, -i);
 		if (s)
-			printk("%s", s);
+			printk(KERN_ERR"%s", s);
 		else
-			printk("(null)");
+			printk(KERN_ERR"(null)");
 	}
 	if (n != 0)
 		printk("\n");

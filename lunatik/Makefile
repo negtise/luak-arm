@@ -7,5 +7,5 @@ luak-objs := lunatik.o lkworkqueue.o lsyscall.o setjmp.o \
             lua/lobject.o lua/lopcodes.o lua/lparser.o lua/lstate.o lua/lstring.o lua/ltable.o lua/ltm.o  \
             lua/lundump.o lua/lvm.o lua/lzio.o lua/lauxlib.o  \
             bindings/printk.o bindings/misc.o bindings/crypto.o bindings/buffer.o \
-            bindings/gpio.o
+            bindings/gpio.o bindings/register.o
 

@@ -218,6 +218,8 @@ static int __init lunak_sysfs_init(void)
 }
 
 
+extern int luak_reg_register(lua_State *L);
+
 static int __init lunatik_init(void)
 {
 	struct luaL_Reg lib_crypto[] = {
@@ -249,6 +251,7 @@ static int __init lunatik_init(void)
 	luaL_register(L, "buffer", lib_buffer);
 
     luak_gpio_register(L);
+    luak_reg_register(L);
 
     lunak_sysfs_init();
 
